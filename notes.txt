@@ -1,0 +1,265 @@
+new_keyword
+this_keyword
+
+// authMiddleware.js
+
+const jwt = require('jsonwebtoken');
+const secretKey = 'your-secret-key'; // Replace with your actual secret key
+
+const authenticate = (req, res, next) => {
+  // Get the token from the "Authorization" header
+  const token = req.header('Authorization');
+
+  if (!token) {
+    return res.status(401).json({ error: 'Unauthorized: No token provided' });
+  }
+
+  try {
+    // Verify the token using the secret key
+    const decoded = jwt.verify(token, secretKey);
+    req.user = decoded; // Add user information to the request object
+
+    next(); // Proceed to the next middleware or route
+  } catch (error) {
+    res.status(401).json({ error: 'Unauthorized: Invalid token' });
+  }
+};
+
+module.exports = authenticate;
+
+
+auth another way:
+
+app.post("/login", async function (req, res) {
+  try {
+    const connection = await mongoClient.connect(URL);
+    const db = connection.db(DB);
+    const user = await db.collection("users-info").findOne({ email: req.body.email });
+    if (user) {
+      const compare = await bcrypt.compare(req.body.password, user.password);
+      if (compare) {
+        const token = jwt.sign({ _id: user._id }, process.env.SECRET, {
+          expiresIn: "10m",
+        });
+        return res.json({ token });
+      } else {
+        return res.json({ message: "Enter correct Email/Password" });
+      }
+    } else {
+      res.status(401).json({ message: "Email/password not found" });
+    }
+    await connection.close();
+  } catch (error) {
+    return res.status(500).json({ message: "Something Went Wrong" });
+  }
+});
+
+
+middleware:
+
+let authenticate = async function (req, res, next) {
+  console.log(req.headers);
+  if (req.headers.authorization) {
+    try {
+      const token = req.headers.authorization.split(" ")[1]; // Extract the token from the Authorization header
+      const decode = await jwt.verify(token, process.env.SECRET);
+      if (decode) {
+        next();
+      }
+    } catch (error) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+  } else {
+    res.status(401).json({ message: "Unauthorized" });
+  }
+};
+
+
+_______________________________________________________________________________________________
+
+// req.cookies("Amazonclone",token, {
+        //   expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        //   httpOnly: true,
+        // });
+
+
+res.clearCookie("Amazonclone",{path:'/'})
+res.rootUser.save()
+res.status(201).json(req.rootUser.tokens)
+
+logout:
+
+exports.logout = async (req, res) =>{
+  if(req.headers && req.headers.authorization){
+    const token = req.headers.authorization.spilt(' ')[1];
+    if(!token){
+      return res.status(404).json({success: false, message:'Aithorization fail!})
+    }
+    const tokens = req.user.tokens;
+    const newTokens = tokens.filter(t=>t !== token)
+    await User.findByIdandUpdate(req.user_id, {tokens})
+    res.json({success:true,message:'Sign out Successfully'});
+  }
+}
+
+
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { id, password } = req.body;
+    const salt = await bcrypt.genSalt(10);
+    const hash = await bcrypt.hash(password, salt);
+
+    // Update the password in the database using Mongoose
+    await UserDetails.findByIdAndUpdate(id,password);
+
+    res.json({
+      statusCode: 200,
+      message: 'Password Reset successfully',
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+
+
+
+router.post("/reset_password", async (req, res) => {
+  const token = req.headers.authorization;
+  const newPassword = req.body.newPassword;
+
+  // Verify the password reset token
+  const decodedToken = verifyPasswordResetToken(token);
+  if (!decodedToken) {
+    // Return an error if the password reset token is invalid
+    return res.status(400).json({ error: "Invalid password reset token." });
+  } else {
+    // Update the user's password
+    const user = await db.findOne({ email: decodedToken.email });
+    // user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+
+    // Respond with a success message
+    res.status(200).json({ message: "Your password has been successfully reset." });
+  }
+});
+
+
+
+router.post("/forgotPassword",authenticate1, async (req, res) => {
+  try {
+    let { email } = req.body;
+    // First, check if the email exists in the database
+    let user = await UserDetails.findOne({ email: email });
+
+    if (user) {
+      // Use the generateAuthToken method to create a password reset token
+      const token = await user.generateAuthToken("10m");
+
+      // The 'token' now contains the JWT token
+      // You can proceed with the email sending logic here
+      // ...
+
+      res.json({
+        statusCode: 200,
+        message: "Password reset link sent to your email",
+        token: token, // Include the token in the response (for debugging or other purposes)
+      });
+    } else {
+      res.json({
+        statusCode: 401,
+        message: "Please enter a valid email address",
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    res.json({
+      statusCode: 500,
+      message: "Internal Server Error",
+      error,
+    });
+  }
+});
+
+
+router.post("/reset_password", async (req, res) => {
+  // If the execution reaches this point, it means the user is authenticated
+
+  const newPassword = req.body.newPassword;
+
+  // Update the user's password
+  const user = req.rootUser; // Assuming that authenticate1 sets the authenticated user in req.rootUser
+  if (user) {
+    user.password = newPassword; // Assuming newPassword is already hashed
+    await user.save();
+
+    // Respond with a success message
+    res
+      .status(200)
+      .json({ message: "Your password has been successfully reset." });
+  } else {
+    // Handle the case where the user is not found
+    res.status(400).json({ error: "User not found." });
+  }
+});
+
+router.post("/forgot-password", async (req, res) => {
+  try {
+    let { email } = req.body;
+    // First, check if the email exists in the database
+    let user = await UserDetails.findOne({ email: email });
+
+    if (user) {
+      // Use the generateAuthToken method to create a password reset token
+      const token = await user.generateAuthToken("10m");
+
+      // Create a transporter for sending emails
+      let transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+          user: process.env.EMAIL, // Your Gmail address
+          pass: process.env.EMAIL_PASSWORD, // Your Gmail password or app password
+        },
+      });
+
+      // Define email content
+      let mailOptions = {
+        from: process.env.EMAIL, // Sender's email address
+        to: user.email, // Recipient's email address (the user's email)
+        subject: "Password Reset Link", // Email subject
+        html: `<p>Click on this link to reset your password: <a href="${yourResetLink}/${token}">Reset Password</a></p>`,
+      };
+
+      // Send the email
+      transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+          console.log("Error sending email:", error);
+          res.json({
+            statusCode: 500,
+            message: "Error sending email",
+          });
+        } else {
+          console.log("Email sent:", info.response);
+          res.json({
+            statusCode: 200,
+            message: "Password reset link sent to your email",
+            token: token,
+          });
+        }
+      });
+    } else {
+      res.json({
+        statusCode: 401,
+        message: "Please enter a valid email address",
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    res.json({
+      statusCode: 500,
+      message: "Internal Server Error",
+      error,
+    });
+  }
+});
