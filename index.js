@@ -12,7 +12,7 @@ const cookieParser = require("cookie-parser");
 app.use(
   cors({
     origin: "*", //  origin of your client-side application
-    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    methods: "GET,PUT,PATCH,POST,DELETE",
     credentials: true, // Allow credentials (cookies) to be sent with the request
   })
 );
