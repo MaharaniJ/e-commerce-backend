@@ -11,7 +11,7 @@ const cookieParser = require("cookie-parser");
 
 app.use(
   cors({
-    origin: "*", //  origin of your client-side application
+    origin: "https://earnest-churros-296ef7.netlify.app", //  origin of your client-side application
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
     credentials: true, // Allow credentials (cookies) to be sent with the request
   })
