@@ -16,7 +16,7 @@ let authenticate1 = async function (req, res, next) {
       });
 
       if (!rootUser) {
-        throw new Error("User Not Found");
+        throw new Error("User Not Found");x
       }
 
       req.token = token; // Update to use req.headers.authorization
